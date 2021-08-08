@@ -1,5 +1,4 @@
-#include "mms_bpf.h"
-#include "motrace.h"
+#include "bpf_tools.h"
 
 #define BPF_LOGBUF_SIZE  (16 * 1024)
 
@@ -60,7 +59,7 @@ int go_bpf_load_program(go_bpf_program_t *program)
 
     fd = go_bpf(BPF_PROG_LOAD, &attr, sizeof(attr));
     if (fd < 0) {
-        WARN_TRACE("failed to load BPF program, err="<<errno<<", bpf verifier="<<buf);
+        //("failed to load BPF program, err="<<errno<<", bpf verifier="<<buf);
         return -1;
     }
 
@@ -83,7 +82,7 @@ int go_bpf_map_create(enum bpf_map_type type, int key_size, int value_size, int 
 
     fd = go_bpf(BPF_MAP_CREATE, &attr, sizeof(attr));
     if (fd < 0) {
-        WARN_TRACE("failed to create BPF map");
+        //("failed to create BPF map");
         return -1;
     }
 
@@ -142,7 +141,7 @@ uint64_t go_bpf_socket_key(int fd)
     optlen = sizeof(cookie);
 
     if (getsockopt(fd, SOL_SOCKET, SO_COOKIE, &cookie, &optlen) == -1) {
-        WARN_TRACE("bpf getsockopt(SO_COOKIE) failed, err="<<errno);
+        //("bpf getsockopt(SO_COOKIE) failed, err="<<errno);
         return -1;
     }
 
@@ -164,19 +163,19 @@ int go_bpf_attach_id(int fd, unsigned char* id)
 
 
 /**
- * mms bpf 
+ * bpf 
  */
 
-static inline void mms_bpf_close(int fd, const char *name)
+static inline void go_bpf_close(int fd, const char *name)
 {
     if (close(fd) != -1) {
         return;
     }
 
-    WARN_TRACE("mms bpf close %s fd:%i failed", name, fd);
+    //("bpf close %s fd:%i failed", name, fd);
 }
 
-int mms_bpf_create_map(int fd, int map_size, go_bpf_program_t *program, const char *symbol)
+int go_bpf_create_map(int fd, int map_size, go_bpf_program_t *program, const char *symbol)
 {
     int map_fd;
     int progfd, failed, flags, rc;
@@ -190,7 +189,7 @@ int mms_bpf_create_map(int fd, int map_size, go_bpf_program_t *program, const ch
 
     flags = fcntl(map_fd, F_GETFD);
     if (flags == -1) {
-        WARN_TRACE("mms bpf getfd failed");
+        //("bpf getfd failed");
         goto failed;
     }
 
@@ -199,7 +198,7 @@ int mms_bpf_create_map(int fd, int map_size, go_bpf_program_t *program, const ch
 
     rc = fcntl(map_fd, F_SETFD, flags);
     if (rc == -1) {
-        WARN_TRACE("mms bpf setfd failed");
+        //("bpf setfd failed");
         goto failed;
     }
 
@@ -213,29 +212,29 @@ int mms_bpf_create_map(int fd, int map_size, go_bpf_program_t *program, const ch
     failed = 0;
 
     if (setsockopt(fd, SOL_SOCKET, SO_ATTACH_REUSEPORT_EBPF, &progfd, sizeof(int)) == -1) {
-        WANR_TRACE("mms bpf setsockopt(SO_ATTACH_REUSEPORT_EBPF) failed");
+        //("bpf setsockopt(SO_ATTACH_REUSEPORT_EBPF) failed");
         failed = 1;
     }
 
-    mms_bpf_close(progfd, "program");
+    bpf_close(progfd, "program");
 
     if (failed) {
         goto failed;
     }
 
-    DEBUG_TRACE("mms bpf sockmap created fd:%i", map_fd);
+    //(" bpf sockmap created fd:%i", map_fd);
     return map_fd;
 
 failed:
 
     if (map_fd != -1) {
-        mms_bpf_close(map_fd, "map");
+        go_bpf_close(map_fd, "map");
     }
 
     return -1;
 }
 
-static int mms_bpf_add_socket(int map_fd, int fd)
+static int go_bpf_add_socket(int map_fd, int fd)
 {
     uint64_t                cookie;
 
@@ -247,7 +246,7 @@ static int mms_bpf_add_socket(int map_fd, int fd)
 
      /* map[cookie] = socket; for use in kernel helper */
     if (go_bpf_map_update(map_fd, &cookie, &fd, BPF_ANY) == -1) {
-        WARN_RACE("quic bpf failed to update socket map key=%xL", cookie);
+        //("bpf failed to update socket map key=%xL", cookie);
         return -1;
     }
 

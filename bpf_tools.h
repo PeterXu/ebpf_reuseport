@@ -1,5 +1,5 @@
-#ifndef _MMS_BPF_H_INCLUDED_
-#define _MMS_BPF_H_INCLUDED_
+#ifndef _BPFTOOLS_H_INCLUDED_
+#define _BPFTOOLS_H_INCLUDED_
 
 #include <stdint.h>
 #include <string.h>

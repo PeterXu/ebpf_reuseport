@@ -59,13 +59,13 @@ enum {
 };
 
 
-#define mms_ice_parse_uin32(p)                                                \
+#define ice_parse_uin32(p)                                                \
     (((__u32)(p)[0] << 24) |                                                  \
      ((__u32)(p)[1] << 16) |                                                  \
      ((__u32)(p)[2] << 8)  |                                                  \
      ((__u32)(p)[3]))
 
-#define mms_ice_parse_uin16(p)                                                \
+#define ice_parse_uin16(p)                                                \
     (((__u16)(p)[0] << 8)  |                                                  \
      ((__u16)(p)[1]))
 
@@ -74,11 +74,11 @@ enum {
  * actual map object is created by the "bpf" system call,
  * all pointers to this variable are replaced by the bpf loader
  */
-struct bpf_map_def SEC("maps") mms_ice_sockmap;
+struct bpf_map_def SEC("maps") ice_sockmap;
 
 
 SEC(PROGNAME)
-int mms_ice_select_socket_by_username(struct sk_reuseport_md *ctx)
+int ice_select_socket_by_username(struct sk_reuseport_md *ctx)
 {
     int             rc;
     __u64           key;
@@ -107,21 +107,21 @@ int mms_ice_select_socket_by_username(struct sk_reuseport_md *ctx)
     }
 
     /* stun type: 0-2 */
-    pkt_type = mms_ice_parse_uin16(data);
+    pkt_type = ice_parse_uin16(data);
     if ((pkt_type & 0x8000) || ((pkt_type>>8) > 1)) {
         debugmsg("not sun packet, invalid type: %u", pkt_type);
         goto failed;
     }
 
     /* stun body len: 2-4 */
-    pkt_len = mms_ice_parse_uin16(data + 2);
+    pkt_len = ice_parse_uin16(data + 2);
     if (pkt_len & 0x0003) {
         debugmsg("not sun packet, invalid len: %u", pkt_len);
         goto failed;
     }
 
     /* stun magic code: 4-8 */
-    pkt_magic = mms_ice_parse_uin32(data + 4);
+    pkt_magic = ice_parse_uin32(data + 4);
     if (pkt_magic != kStunMagicCookie) {
         debugmsg("not stun packet, invalid magic: %x", pkt_magic);
         goto failed;
@@ -141,8 +141,8 @@ int mms_ice_select_socket_by_username(struct sk_reuseport_md *ctx)
     /* generate key(u64) from stun username */
     key = 0;
     for (; key == 0 && offset + 4 <= len; ) {
-        __u16 attr_type = mms_ice_parse_uin16(data + offset);
-        __u16 attr_len = mms_ice_parse_uin16(data + offset + 2);
+        __u16 attr_type = ice_parse_uin16(data + offset);
+        __u16 attr_len = ice_parse_uin16(data + offset + 2);
         offset += 4;
 
         switch (attr_type) {
@@ -174,21 +174,21 @@ int mms_ice_select_socket_by_username(struct sk_reuseport_md *ctx)
     }
 
     /* select SO_REUSEPORT socket from BPF_MAP_TYPE_REUSEPORT_ARRAY map by key */
-    rc = bpf_sk_select_reuseport(ctx, &mms_ice_sockmap, &key, 0);
+    rc = bpf_sk_select_reuseport(ctx, &ice_sockmap, &key, 0);
 
     switch (rc) {
     case 0:
-        debugmsg("mms ice socket selected by key 0x%llx", key);
+        debugmsg("ice socket selected by key 0x%llx", key);
         return SK_PASS;
 
     /* kernel returns positive error numbers, errno.h defines positive */
     case -ENOENT:
-        debugmsg("mms ice default route for key 0x%llx", key);
+        debugmsg("ice default route for key 0x%llx", key);
         /* let the default reuseport logic decide which socket to choose */
         return SK_PASS;
 
     default:
-        debugmsg("mms ice bpf_sk_select_reuseport err: %d key 0x%llx",
+        debugmsg("ice bpf_sk_select_reuseport err: %d key 0x%llx",
                   rc, key);
         goto failed;
     }

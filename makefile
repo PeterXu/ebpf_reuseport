@@ -2,8 +2,8 @@ CFLAGS=-O2 -Wall
 
 LICENSE=BSD
 
-PROGNAME=ngx_quic_reuseport_helper
-RESULT=ngx_event_quic_bpf_code
+PROGNAME=ice_reuseport_helper
+RESULT=ice_reuseport_bpf_code
 DEST=../$(RESULT).c
 
 all: $(RESULT)
