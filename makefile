@@ -1,4 +1,6 @@
-CFLAGS=-O2 -Wall
+CFLAGS = -D__x86_64__ -I../kernel-headers/usr/include -I../kernel-sources/tools/lib
+
+CFLAGS += -O2 -Wall
 
 LICENSE=BSD
 
@@ -9,7 +11,7 @@ DEST=../$(RESULT).c
 all: $(RESULT)
 
 $(RESULT): $(PROGNAME).o
-	LICENSE=$(LICENSE) PROGNAME=$(PROGNAME) bash ./bpfgen.sh $< > $@
+	LICENSE=$(LICENSE) PROGNAME=$(PROGNAME) bash ./genbpf.sh $< > $@
 
 DEFS=-DPROGNAME=\"$(PROGNAME)\"                                               \
      -DLICENSE_$(LICENSE)                                                     \

@@ -1,12 +1,16 @@
-#include <errno.h>
+#include <linux/errno.h>
 #include <linux/string.h>
+#include <linux/in.h>
+#include <linux/tcp.h>
 #include <linux/udp.h>
 #include <linux/bpf.h>
+
 /*
  * the bpf_helpers.h is not included into linux-headers, only available
  * with kernel sources in "tools/lib/bpf/bpf_helpers.h" or in libbpf.
  */
-#include <bpf/bpf_helpers.h>
+/* #include <bpf/bpf_helpers.h> */
+#include <bpf/libbpf.h>
 
 
 #if !defined(SEC)
@@ -76,6 +80,8 @@ enum {
  */
 struct bpf_map_def SEC("maps") ice_sockmap;
 
+static int (*bpf_sk_select_reuseport)(void *ctx, void *map, void *key, __u32 flags) =
+	(void *) BPF_FUNC_sk_select_reuseport;
 
 SEC(PROGNAME)
 int ice_select_socket_by_username(struct sk_reuseport_md *ctx)
@@ -148,7 +154,7 @@ int ice_select_socket_by_username(struct sk_reuseport_md *ctx)
         switch (attr_type) {
         case STUN_ATTR_USERNAME:
             {
-                unsigned char *pkey = &key;
+                unsigned char *pkey = (unsigned char *)&key;
                 unsigned char *username = data + offset;
                 for (__u16 i = 0; i < attr_len; i += 1) {
                     pkey[7 - (i % 8)] ^= username[i];
