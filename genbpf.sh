@@ -22,7 +22,7 @@ generate_head()
 #include <stddef.h>
 #include <stdint.h>
 
-#include "ngx_bpf.h"
+#include "usr_bpf.h"
 
 
 END
@@ -32,7 +32,7 @@ generate_tail()
 {
     cat << END
 
-ngx_bpf_program_t $PROGNAME = {
+usr_bpf_program_t $PROGNAME = {
     .relocs = bpf_reloc_prog_$funcname,
     .nrelocs = sizeof(bpf_reloc_prog_$funcname)
                / sizeof(bpf_reloc_prog_$funcname[0]),
@@ -48,7 +48,7 @@ END
 
 process_relocations()
 {
-    echo "static ngx_bpf_reloc_t bpf_reloc_prog_$funcname[] = {"
+    echo "static usr_bpf_reloc_t bpf_reloc_prog_$funcname[] = {"
 
     objdump -r $filename | awk '{
 
